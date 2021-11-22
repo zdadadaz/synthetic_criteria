@@ -1,0 +1,14 @@
+1	History or presence of [mask]
+2	history of [mask]
+3	[mask] hitory
+4	Patients with a history of [mask]
+5	Subject has a history of  [mask]
+6	historic [mask]
+7	Past history of [mask]
+8	has [mask] in the past medical history
+9	Has a history of [mask]
+10	Previous history of [mask]
+11	Have a history of [mask]
+12	have a [mask] history
+13	current presence of [mask]
+14	Known history of [mask]

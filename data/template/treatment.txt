@@ -1,0 +1,6 @@
+1	For whom the study physicians recommend [mask] treatment
+2	Procedure for [mask]
+3	Previous [mask] surgery
+4	Acromegalic patients who have been treated with [mask]
+5	[mask] surgery
+6	[mask]

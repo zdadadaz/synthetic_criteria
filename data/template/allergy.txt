@@ -1,0 +1,6 @@
+1	Has an allergy to [mask]
+2	Known allergy to [mask] medication in protocol
+3	known allergy to [mask]
+4	Hypersensitivity, intolerance or contraindication to any component of the study mask
+5	Patients allergic to [mask]
+6	[mask]

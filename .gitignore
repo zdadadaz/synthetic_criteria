@@ -1,0 +1,6 @@
+crossEncoder/monoT5_model
+data/tripple
+log
+output/
+.idea/
+.DS_Store

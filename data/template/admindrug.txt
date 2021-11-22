@@ -1,0 +1,9 @@
+1	Previous treatment with [mask]
+2	Currently receiving [mask]
+3	taking [mask]
+4	Use of [mask] pill
+5	Use of [mask]
+6	The participant is taking [mask]
+7	Drinking or taking [mask]
+8	Receiving medications [mask]
+9	[mask]

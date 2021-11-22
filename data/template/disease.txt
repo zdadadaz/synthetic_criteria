@@ -1,0 +1,22 @@
+1	Patients who are suspected with [mask]
+2	Suspected smear [mask]
+3	Diagnosed with [mask]
+4	Patients with [mask] found through medical history
+5	Patients with [mask]
+6	Suspected or diagnosed [mask]
+7	comfirmed [mask]
+8	with a diagnosis of [mask]
+9	A diagnosis of [mask]
+10	known activete [mask]
+11	known activete [mask]
+12	patients with diagnosis and/or ongoing [mask] treatment
+13	Suffering from [mask]
+14	patients with confirmed [mask]
+15	Has signs or symptoms of [mask]
+16	symptoms of [mask]
+17	Recognized [mask]
+18	Display current evidence of [mask]
+19	Suspected [mask] subject
+20	Subjects with [mask]
+21	treatment for [mask]
+22	[mask]
