@@ -23,22 +23,22 @@ srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/trippl
                                               --base_model ./crossEncoder/models/t5base/psuTempT5_model
 
 # FT tc + psu ret
-srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
-                                              --learning_rate 1e-3 \
-                                              --output_model_path ./crossEncoder/models/t5base/tc_psuRetT5_model \
-                                              --base_model ./crossEncoder/models/t5base/psuRetT5_model
+#srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
+#                                              --learning_rate 1e-3 \
+#                                              --output_model_path ./crossEncoder/models/t5base/tc_psuRetT5_model \
+#                                              --base_model ./crossEncoder/models/t5base/psuRetT5_model
 
-# FT tc + psu ret + medt5
-srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
-                                              --learning_rate 1e-3 \
-                                              --output_model_path ./crossEncoder/models/t5base/tc_psuRet_medT5_model \
-                                              --base_model ./crossEncoder/models/t5base/psuRet_medT5_model
-
-# FT tc + psu temp + medt5
-srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
-                                              --learning_rate 1e-3 \
-                                              --output_model_path ./crossEncoder/models/t5base/tc_psuTemp_medT5_model \
-                                              --base_model ./crossEncoder/models/t5base/psuTemp_medT5_model
+## FT tc + psu ret + medt5
+#srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
+#                                              --learning_rate 1e-3 \
+#                                              --output_model_path ./crossEncoder/models/t5base/tc_psuRet_medT5_model \
+#                                              --base_model ./crossEncoder/models/t5base/psuRet_medT5_model
+#
+## FT tc + psu temp + medt5
+#srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
+#                                              --learning_rate 1e-3 \
+#                                              --output_model_path ./crossEncoder/models/t5base/tc_psuTemp_medT5_model \
+#                                              --base_model ./crossEncoder/models/t5base/psuTemp_medT5_model
 
 
 

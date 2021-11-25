@@ -40,7 +40,8 @@ def choose_document(qrels, trials, nctid2idx):
             pick_num = len(qrels['pos']) - len(picked)
             neg_list = random.sample(qrels['neg'], pick_num)
             for docid in neg_list:
-                if 'inclusion_list' in trials[nctid2idx[docid]] and 'desc' in trials[nctid2idx[docid]]:
+                if 'eligibility' in trials[nctid2idx[docid]] and 'desc' in trials[nctid2idx[docid]] and \
+                    trials[nctid2idx[docid]]['eligibility'][0] and trials[nctid2idx[docid]]['desc'][0]:
                     picked.add(docid)
                 tried.add(docid)
         if len(picked) < len(qrels['pos']):
@@ -126,12 +127,16 @@ def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
                     for p in passages[0][docid][dtype]:
                         out_script.append(p)
                     # rand neg
+                    tried = set()
                     negdoc = random.sample(neg_doc_list, 1)[0]
-                    while dtype not in passages[1][negdoc]:
+                    tried.add(negdoc)
+                    while dtype not in passages[1][negdoc] and len(tried) < len(neg_doc_list):
                         negdoc = random.sample(neg_doc_list, 1)[0]
+                        tried.add(negdoc)
                     for p in passages[1][negdoc][dtype]:
                         out_script.append(p)
-                    outfile.write('\t'.join(out_script) + f'\t{dtype}' '\n')
+                    if len(out_script) >= 7:
+                        outfile.write('\t'.join(out_script) + f'\t{dtype}' '\n')
                 # combine i and d
                 chosen_docid = docid
                 for dtype in ['e']:
@@ -139,8 +144,11 @@ def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
                     for pos_neg in range(2):
                         if pos_neg == 1:# neg
                             chosen_docid = random.sample(neg_doc_list, 1)[0]
-                            while dtype not in passages[1][chosen_docid] or 'd' not in passages[pos_neg][chosen_docid]:
+                            tried = set()
+                            tried.add(chosen_docid)
+                            while (dtype not in passages[1][chosen_docid] or 'd' not in passages[pos_neg][chosen_docid]) and len(tried) < len(neg_doc_list):
                                 chosen_docid = random.sample(neg_doc_list, 1)[0]
+                                tried.add(chosen_docid)
                         if chosen_docid not in passages[pos_neg] or dtype not in passages[pos_neg][chosen_docid] or 'd' not in \
                                 passages[pos_neg][chosen_docid]:
                             break

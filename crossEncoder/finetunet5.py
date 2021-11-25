@@ -21,9 +21,10 @@ class MonoT5Dataset(Dataset):
         sample = self.data[idx]
         text = f'Query: {sample[0]} Document: {sample[1]} Relevant:'
         return {
-          'text': text,
-          'labels': sample[2],
+            'text': text,
+            'labels': sample[2],
         }
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -63,10 +64,31 @@ def main():
             train_samples.append((query, negative, 'false'))
 
     def smart_batching_collate_text_only(batch):
-        texts = [example['text'] for example in batch]
+        texts = []
+        for example in batch:
+            new_token = None
+            token = tokenizer.tokenize(example['text'])
+            if len(token) > 512:
+                for idx, t in enumerate(token):
+                    if t == '▁Document' and token[idx + 1] == ':':
+                        if idx > (len(token) - idx):
+                            len_reduce = len(token) - 511
+                            new_token = token[:(idx - len_reduce)] + token[idx:]
+                            break
+                if new_token:
+                    texts.append(''.join(new_token).replace('▁', ' '))
+                else:
+                    texts.append(example['text'])
+            else:
+                texts.append(example['text'])
         tokenized = tokenizer(texts, padding=True, truncation='longest_first', return_tensors='pt', max_length=512)
         tokenized['labels'] = tokenizer([example['labels'] for example in batch], return_tensors='pt')['input_ids']
-
+        for idx, input_ids in enumerate(tokenized['input_ids']):
+            if len(input_ids) == 512 and input_ids[-1] == 1 and input_ids[-4] != 31484:
+                tokenized['input_ids'][-4] = 31484
+                tokenized['input_ids'][-3] = 17
+                tokenized['input_ids'][-2] = 10
+                tokenized['input_ids'][-1] = 1
         for name in tokenized:
             tokenized[name] = tokenized[name].to(device)
 
@@ -112,6 +134,7 @@ def main():
 
     trainer.save_model(args.output_model_path)
     trainer.save_state()
+
 
 if __name__ == "__main__":
     main()

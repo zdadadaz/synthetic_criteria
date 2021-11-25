@@ -4,3 +4,5 @@ log
 output/
 .idea/
 .DS_Store
+GradCache/
+pubmed/

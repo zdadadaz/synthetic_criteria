@@ -16,6 +16,7 @@ from tqdm import tqdm
 import argparse
 import torch
 
+
 def eval(qrelsFile, res_path, out_method_name, out_path):
     eval = eval_set_args(qrelsFile, res_path)
 
@@ -79,11 +80,10 @@ def argfunc():
                         help="Base model to fine tune.")
     parser.add_argument("--outname", default=None, type=str, required=True,
                         help="medt5")
-    parser.add_argument("--field", default=None, type=str, required=True,
-                        help="e or ed")
     parser.add_argument("--batchsize", type=int, default=64)
 
     return parser.parse_args()
+
 
 def get_model(model_path, batch_size):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -99,15 +99,15 @@ def get_model(model_path, batch_size):
 def inference():
     path_to_file = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
     ############## choose the right split
-    path_to_pickle = './data/splits/clean_data_cfg_splits_63_ct21'
+    path_to_pickle = './data/splits/clean_data_cfg_splits_42_ct21'
     path_to_query = '../../data/TRECCT2021/topics2021.xml'
-    path_to_run = './crossEncoder/runs/ielab-r2.res'
+    path_to_run = './crossEncoder/data/ielab-r2.res'
     outdir = './crossEncoder/runs'
     outdir_eval = './crossEncoder/eval'
 
     arg = argfunc()
     model_path = arg.base_model
-    field_type = arg.field
+    field_type = 'e'
     outname = arg.outname + '_' + field_type
 
     batch_size = int(arg.batchsize)
@@ -151,15 +151,16 @@ def inference():
             for etype in ['eligibility', 'desc']:  # need add exlcusion
                 if etype in trials[nctid2idx[docid]] and trials[nctid2idx[docid]][etype]:
                     for idxp, p in enumerate(trials[nctid2idx[docid]][etype]):
-                        textT5 = to_t5_input((query_text, title, cond, p, 'e'))
-                        textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
-                        ids.append(docid + f'_{etype[0]}_' + str(idxp))
-                        texts.append(Text(textT5, {'docid': docid + f'_{etype[0]}_' + str(idxp)}, 0))
-                        flag = False
-            if flag: # no eligibility or description
+                        if p:
+                            textT5 = to_t5_input((query_text, title, cond, p, 'e'))
+                            textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
+                            ids.append(docid + f'_{etype[0]}_' + str(idxp))
+                            texts.append(Text(textT5, {'docid': docid + f'_{etype[0]}_' + str(idxp)}, 0))
+                            flag = False
+            if flag:  # no eligibility or description
                 textT5 = to_t5_input((query_text, title, cond, 'NA', 'e'))
                 textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
-                ids.append(docid + f'_{etype[0]}_' + str(idxp))
+                ids.append(docid + f'_{etype[0]}_-1')
                 texts.append(Text(textT5, {'docid': docid + f'_{etype[0]}_' + str(idxp)}, 0))
 
         reranked = reranker.rerank(query_class, texts)
@@ -183,6 +184,7 @@ def inference():
                 out_scores.append((docid_sub, score))
         write_result(qid, out_scores, outdir, outname)
     eval(path_to_file, resfile, outname, outdir_eval)
+
 
 if __name__ == '__main__':
     inference()

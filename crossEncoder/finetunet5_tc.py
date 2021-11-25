@@ -93,12 +93,12 @@ def main():
         texts = [example['text'] for example in batch]
         tokenized = tokenizer(texts, padding=True, truncation='longest_first', return_tensors='pt', max_length=512)
         tokenized['labels'] = tokenizer([example['labels'] for example in batch], return_tensors='pt')['input_ids']
-        for input_ids in enumerate(tokenized['input_ids']):
+        for idx, input_ids in enumerate(tokenized['input_ids']):
             if len(input_ids) == 512 and input_ids[-1] == 1 and input_ids[-4] != 31484:
-                input_ids[-4] = 31484
-                input_ids[-3] = 17
-                input_ids[-2] = 10
-                input_ids[-1] = 1
+                tokenized['input_ids'][-4] = 31484
+                tokenized['input_ids'][-3] = 17
+                tokenized['input_ids'][-2] = 10
+                tokenized['input_ids'][-1] = 1
 
         for name in tokenized:
             tokenized[name] = tokenized[name].to(device)

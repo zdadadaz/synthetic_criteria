@@ -8,27 +8,23 @@
 #SBATCH -e log/erro_infer1.txt
 #SBATCH --partition=gpu
 #SBATCH --cpus-per-task=2
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:tesla-smx2:1
 
 # FT medt5
-srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/medMST5_ps_model \
+srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/medMST5_ps_model \
                                         --outname medt5 \
-                                        --field e
 
 # FT psu temp
-srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/psuTempT5_model \
+srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/psuTempT5_model \
                                         --outname psuTemp \
-                                        --field e
 
 # FT psu ret
-srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/psuRetT5_model \
-                                        --outname psuRet \
-                                        --field e
+#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/psuRetT5_model \
+#                                        --outname psuRet \
 
-# FT tc ret
-srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/tc_model \
+# FT tc
+srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_model \
                                         --outname tc_model \
-                                        --field e
 
 
 #python ./crossEncoder/inference_e.py --base_model ./crossEncoder/medMST5_ps_model --outname medt5_test --field e

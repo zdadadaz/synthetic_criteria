@@ -9,7 +9,7 @@ def split_sentence(sentences, out):
     max_lenght = 4
     cur = []
     for l in sentences:
-        if not l :
+        if not l:
             continue
         if len(cur) < max_lenght:
             cur.append(l)
@@ -17,7 +17,7 @@ def split_sentence(sentences, out):
             out.append(' '.join(cur))
             for _ in range(max_lenght//2):
                 cur.pop(0)
-    if len(cur) < max_lenght:
+    if len(cur) <= max_lenght or not out or (out and out[-1] != ' '.join(cur)):
         out.append(' '.join(cur))
 
 def split_document(path_to_dir, path_to_pickle, path_out_pickle):
@@ -59,8 +59,8 @@ if __name__ == '__main__':
     path_to_pickle = '../ctCriteria/utils_parse_cfg/parsed_data/clean_data_cfg'
     path_out_pickle = 'data/splits/clean_data_cfg_splits_42'
     split_document(path_to_dir, path_to_pickle, path_out_pickle)
-
-    path_to_dir = '../../data/TRECCT2021/clinicaltrials_json_cond'
-    path_to_pickle = '../ctCriteria/utils_parse_cfg/parsed_data/clean_data_cfg_ct21'
-    path_out_pickle = 'data/splits/clean_data_cfg_splits_42_ct21'
-    split_document(path_to_dir, path_to_pickle, path_out_pickle)
+    #
+    # path_to_dir = '../../data/TRECCT2021/clinicaltrials_json_cond'
+    # path_to_pickle = '../ctCriteria/utils_parse_cfg/parsed_data/clean_data_cfg_ct21'
+    # path_out_pickle = 'data/splits/clean_data_cfg_splits_42_ct21'
+    # split_document(path_to_dir, path_to_pickle, path_out_pickle)
