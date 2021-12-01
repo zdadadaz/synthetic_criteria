@@ -6,3 +6,5 @@ output/
 .DS_Store
 GradCache/
 pubmed/
+denseRetrieve/__pycache__/
+crossEncoder/data/

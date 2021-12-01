@@ -1,6 +1,7 @@
 #####################
 # can be deleted when deploy
 #####################
+import argparse
 import os
 from crossEncoder.inference_e import eval
 
@@ -30,6 +31,21 @@ def run_eval_for_all_res():
                 res_path = os.path.join(path, name)
                 eval(path_to_qrel, res_path, outname, outdir_eval)
 
+def convert_res_to_trec_res():
+    path = 'crossEncoder/runs/tc_medt5_3b_500_e.res'
+    out_path = 'crossEncoder/runs/tc_medt5_3b_500_e_reform.res'
+    out =[]
+    for l in open(path):
+        qid, _, docid, rank, score, method = l.strip().split('\t')
+        out.append("{}\tQ0\t{}\t{}\t{}\t{}\n".format(qid, docid, rank, 1000-int(rank)+1, method))
+    with open(out_path, 'w') as f:
+        f.writelines(out)
+
 if __name__ == '__main__':
-    # run_eval_for_all_res()
-    combine_evals()
+    run_eval_for_all_res()
+    # combine_evals()
+
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--test",default='True', choices=('True','False'))
+    # args = parser.parse_args()
+    # print(args.test, type(args.test))

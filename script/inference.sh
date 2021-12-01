@@ -27,4 +27,4 @@ srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5b
                                         --outname tc_model \
 
 
-#python ./crossEncoder/inference_e.py --base_model ./crossEncoder/medMST5_ps_model --outname medt5_test --field e
+#python -m pdb ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_medMST5_model --outname tc_medt5_test

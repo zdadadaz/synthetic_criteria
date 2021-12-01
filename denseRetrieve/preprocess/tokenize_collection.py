@@ -18,55 +18,39 @@ def to_t5_input(sample):
         text = f'title: {sample[1]} condition: {sample[2]} eligibility: {sample[3]} description: {sample[4]} '
     return text
 
-
-def tokenize_one(tokenizer, seq_id, text, outFile):
-    tokens = tokenizer.tokenize(text)
-    tokenized = tokenizer.convert_tokens_to_ids(tokens)
-    # encode(tokens, padding=True, truncation='longest_first', return_tensors='pt', max_length=512)
-    outFile.write(json.dumps({"text_id": seq_id, "text": tokenized}))
-    outFile.write("\n")
-
-
-def tokenize_file(tokenizer, trials, output_file):
-    total_size = len(trials)
-    cnt = 0
-    ids = []
-    with open(output_file, 'w') as outFile:
-        for idx, trial in tqdm(enumerate(trials), total=total_size,
-                               desc=f"Tokenize"):
-            docid = trial['number']
-            title = trial['title'] if 'title' in trial else 'NA'
-            cond = trial['condition'] if 'condition' in trial else 'NA'
-            flag = True
-            for etype in ['eligibility', 'desc']:
-                if etype in trial and trial:
-                    for idxp, p in enumerate(trial[etype]):
-                        if p:
-                            textT5 = to_t5_input((etype[0], title, cond, p))
-                            textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
-                            tokenize_one(tokenizer, cnt, textT5, outFile)
-                            ids.append(docid + f'_{etype[0]}_' + f'{idxp:03}')
-                            cnt += 1
-                            flag = False
-            if flag:  # no eligibility or description
-                textT5 = to_t5_input(('e', title, cond, 'NA'))
-                textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
-                tokenize_one(tokenizer, cnt, textT5, outFile)
-                ids.append(docid + f'_{etype[0]}_' + f'{-1:03}')
-                cnt += 1
-            outFile.flush()
-    with open('./denseRetrieve/data/ct21/ance_token/nctid2id.json', 'w') as f:
-        f.write('\n'.join(ids))
-
-def tokenize_test(trial):
+def tokenize_one_trial(trial):
     out = []
-    for idx, i in enumerate(trial['inclusion_list']):
-        a = tokenizer.tokenize(i)
+    docid = trial['number']
+    title = trial['title'] if 'title' in trial else 'NA'
+    cond = trial['condition'] if 'condition' in trial else 'NA'
+    flag = True
+    map2idx = {'e': 0, 'd': 1}
+    print(docid)
+    for etype in ['eligibility', 'desc']:
+        if etype in trial and trial:
+            for idxp, p in enumerate(trial[etype]):
+                if p:
+                    textT5 = to_t5_input((etype[0], title, cond, p))
+                    textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
+                    tokens = tokenizer.tokenize(textT5)
+                    tokenized = tokenizer.convert_tokens_to_ids(tokens)
+                    encoded = {
+                        'text_id': docid[3:] + f'{map2idx[etype[0]]}' + f"{idxp:03}",
+                        'text': tokenized
+                    }
+                    out.append(json.dumps(encoded))
+                    flag = False
+    if flag:  # no eligibility or description
+        textT5 = to_t5_input(('e', title, cond, 'NA'))
+        textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
+        tokens = tokenizer.tokenize(textT5)
+        tokenized = tokenizer.convert_tokens_to_ids(tokens)
         encoded = {
-            'text_id': trial['number'] + '_' + str(idx),
-            'text': a
+            'text_id': docid[3:] + f'{map2idx[etype[0]]}' + f"{999:03}",
+            'text': tokenized
         }
         out.append(json.dumps(encoded))
+    print(docid, len(out))
     return '\n'.join(out)
 
 
@@ -97,7 +81,5 @@ if __name__ == "__main__":
             with open(os.path.join(args.output_dir, f'split{i:02d}.json'), 'w') as f:
                 pbar = tqdm(trials[i * split_size: (i + 1) * split_size])
                 pbar.set_description(f'split - {i:02d}')
-                for jitem in p.imap(tokenize_test, pbar, chunksize=500):
+                for jitem in p.imap(tokenize_one_trial, pbar, chunksize=500):
                     f.write(jitem + '\n')
-    # output_file = f"{args.output_dir}/collection.json"
-    # tokenize_file(tokenizer, trials, output_file)

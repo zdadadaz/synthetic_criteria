@@ -10,6 +10,8 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --gres=gpu:tesla-smx2:2
 
+# preprocess
+srun python denseRetrieve/preprocess/prepare_tc.py
 
 ## psu temp
 #srun python -m torch.distributed.launch \

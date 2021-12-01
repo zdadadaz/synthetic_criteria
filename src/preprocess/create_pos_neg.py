@@ -36,17 +36,20 @@ def choose_document(qrels, trials, nctid2idx):
     else:
         picked = set()
         tried = set()
-        while len(picked) < len(qrels['pos']) and len(tried) < len(qrels['neg']):
-            pick_num = len(qrels['pos']) - len(picked)
+        ratio_neg = 4
+        while len(picked) < len(qrels['pos']) * ratio_neg and len(tried) < len(qrels['neg']):
+            pick_num = len(qrels['pos']) * ratio_neg - len(picked)
+            pick_num = min(pick_num, len(qrels['neg']))
             neg_list = random.sample(qrels['neg'], pick_num)
             for docid in neg_list:
                 if 'eligibility' in trials[nctid2idx[docid]] and 'desc' in trials[nctid2idx[docid]] and \
                     trials[nctid2idx[docid]]['eligibility'][0] and trials[nctid2idx[docid]]['desc'][0]:
                     picked.add(docid)
                 tried.add(docid)
-        if len(picked) < len(qrels['pos']):
-            picked = list(picked) + random.sample(list(tried.difference(picked)), len(qrels['pos']) - len(picked))
-        return (qrels['pos'], list(picked))
+        if len(picked) < len(qrels['pos']) * ratio_neg:
+            pick_num = min(len(tried.difference(picked)), len(qrels['pos']) * ratio_neg - len(picked))
+            picked = list(picked) + random.sample(list(tried.difference(picked)), pick_num)
+        return (qrels['pos'], list(set(picked)))
 
 
 def get_model(model_path, batch_size):
@@ -59,15 +62,24 @@ def get_model(model_path, batch_size):
     reranker = MonoT5(model=model, tokenizer=tokenizer)
     return reranker
 
+def write_all_scores(passages, outname):
+    with open(outname, "a+") as f:
+        f.write(json.dumps(passages) + '\n')
+        f.flush()
+
 
 def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
     qrels = get_all_judged(path_to_file, 0)
     trials = pickle.load(open(path_to_pickle, 'rb'))
     nctid2idx = {i['number']: idx for idx, i in enumerate(trials)}
 
-    model_path = './crossEncoder/models/t5base/medMST5_ps_model'
-    batch_size = 64
+    # model_path = './crossEncoder/models/t5base/medMST5_ps_model'
+    model_path = 'castorini/monot5-3b-med-msmarco'
+
+    batch_size = 32
     reranker = get_model(model_path, batch_size)
+    # model parallel
+    reranker.model.parallelize()
 
     dtypeMap = {'e': 'eligibility', 'd': 'desc'}
 
@@ -115,6 +127,7 @@ def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
                     if docid not in passages[i]:
                         passages[i][docid] = {}
                     passages[i][docid][dtype] = (title, cond, criteria)
+            # write_all_scores(passages, f'crossEncoder/tmp_data/{outname}.log')
             # write out tripple: query, title, condition, pos inclusion/description, neg inclusion/description
             neg_doc_list = list(passages[1].keys())
             for docid in passages[0]:
@@ -142,7 +155,7 @@ def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
                 for dtype in ['e']:
                     out_script = [text]
                     for pos_neg in range(2):
-                        if pos_neg == 1:# neg
+                        if pos_neg == 1: # neg
                             chosen_docid = random.sample(neg_doc_list, 1)[0]
                             tried = set()
                             tried.add(chosen_docid)
@@ -163,17 +176,17 @@ def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
 if __name__ == '__main__':
     random.seed(123)
     path_to_file = '../../data/test_collection/qrels-clinical_trials.tsv'
-    path_to_pickle = './data/splits/clean_data_cfg_splits_42'
+    path_to_pickle = './data/splits/clean_data_cfg_splits_63_ie'
     path_to_query = '../../data/test_collection/topics-2014_2015-description.topics'
     query = rf.read_ts_topic(path_to_query)
-    outname = 'tripple_tc.tsv'
+    outname = 'tripple_tc_63_3b_ie.tsv'
     print(outname)
     run_monot5_on_judge(path_to_file, path_to_pickle, query, outname)
 
-    # path_to_file = '../../data/TRECCT2021/trec-ct2021-qrels.txt'
-    # path_to_pickle = './data/splits/clean_data_cfg_splits_42_ct21'
-    # path_to_query = '../../data/TRECCT2021/topics2021.xml'
-    # outname = 'tripple_ct21.tsv'
-    # query = rf.read_topics_ct21(path_to_query)
-    # print(outname)
-    # run_monot5_on_judge(path_to_file, path_to_pickle, query, outname)
+    path_to_file = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
+    path_to_pickle = './data/splits/clean_data_cfg_splits_63_ct21_ie'
+    path_to_query = '../../data/TRECCT2021/topics2021.xml'
+    outname = 'tripple_ct21_63_3b_ie.tsv'
+    query = rf.read_topics_ct21(path_to_query)
+    print(outname)
+    run_monot5_on_judge(path_to_file, path_to_pickle, query, outname)

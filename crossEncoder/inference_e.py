@@ -31,12 +31,12 @@ def eval(qrelsFile, res_path, out_method_name, out_path):
 
 
 def to_t5_input(sample):
-    if sample[4] == 'e':
-        text = f'Query: {sample[0]} Document: title: {sample[1]} condition: {sample[2]} eligibility: {sample[3]} Relevant:'
-    elif sample[4] == 'd':
-        text = f'Query: {sample[0]} Document: title: {sample[1]} condition: {sample[2]} description: {sample[3]} Relevant:'
-    elif sample[4] == 'ed':
-        text = f'Query: {sample[0]} Document: title: {sample[1]} condition: {sample[2]} eligibility: {sample[3]} description: {sample[5]} Relevant:'
+    if sample[3] == 'e':
+        text = f'title: {sample[0]} condition: {sample[1]} eligibility: {sample[2]}'
+    elif sample[3] == 'd':
+        text = f'title: {sample[0]} condition: {sample[1]} description: {sample[2]}'
+    elif sample[3] == 'ed':
+        text = f'title: {sample[0]} condition: {sample[1]} eligibility: {sample[2]} description: {sample[4]}'
     return text
 
 
@@ -53,10 +53,11 @@ def write_result(qid, input_list, output_path, outname):
 
 def write_all_scores(qid, scores, output_path, outname, dtype):
     with open(os.path.join(output_path, outname) + f'_{dtype}_pscore.log', "a+") as f:
-        for score, docid in scores:
-            f.write("{}\t{}\t{}\n".format(qid, score, docid))
+        for r in range(len(scores)):
+            docid_dtype = scores[r].metadata["docid"]
+            score = float(scores[r].score)
+            f.write("{}\t{}\t{}\n".format(qid, score, docid_dtype))
         f.flush()
-
 
 def create_res_from_log(path_to_file, outdir, outname, outdir_eval):
     picked = set()
@@ -81,6 +82,8 @@ def argfunc():
     parser.add_argument("--outname", default=None, type=str, required=True,
                         help="medt5")
     parser.add_argument("--batchsize", type=int, default=64)
+    parser.add_argument("--model_parallel", type=int, default=0)
+    parser.add_argument("--path_to_pickle", type=str, required=True)
 
     return parser.parse_args()
 
@@ -91,21 +94,35 @@ def get_model(model_path, batch_size):
     model = T5ForConditionalGeneration.from_pretrained(model_path).to(device).eval()
     tokenizer = T5BatchTokenizer(
         AutoTokenizer.from_pretrained(model_path, use_fast=False),
-        batch_size=batch_size)
+        batch_size=batch_size, max_length=512)
     reranker = MonoT5(model=model, tokenizer=tokenizer)
     return reranker
 
+def get_all_result(path_to_dir):
+    out = None
+    for path, subdirs, files in os.walk(path_to_dir):
+        for name in files:
+            if name.split('.')[-1] == 'res':
+                if not out:
+                    out = rf.read_resFile(os.path.join(path, name))
+                else:
+                    res = rf.read_resFile(os.path.join(path, name))
+                    for qid in res:
+                        out[qid] = set(out[qid]).union(set(res[qid]))
+    return out
 
 def inference():
     path_to_file = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
-    ############## choose the right split
-    path_to_pickle = './data/splits/clean_data_cfg_splits_42_ct21'
     path_to_query = '../../data/TRECCT2021/topics2021.xml'
     path_to_run = './crossEncoder/data/ielab-r2.res'
+    # path_to_run = 'sparseRetrieve/runs/intermittent/'
     outdir = './crossEncoder/runs'
     outdir_eval = './crossEncoder/eval'
 
     arg = argfunc()
+    ############## choose the right split
+    # path_to_pickle = './data/splits/clean_data_cfg_splits_63_ct21'
+    path_to_pickle = arg.path_to_pickle
     model_path = arg.base_model
     field_type = 'e'
     outname = arg.outname + '_' + field_type
@@ -130,10 +147,17 @@ def inference():
 
     # # initialize
     query = rf.read_topics_ct21(path_to_query)
-    res = rf.read_resFile(path_to_run)
+    if path_to_run[-3:] == 'res':
+        res = rf.read_resFile(path_to_run)
+    else:
+        res = get_all_result(path_to_run)
     trials = pickle.load(open(path_to_pickle, 'rb'))
     nctid2idx = {i['number']: idx for idx, i in enumerate(trials)}
     reranker = get_model(model_path, batch_size)
+
+    # model parallel
+    if arg.model_parallel != 0:
+        reranker.model.parallelize()
 
     # prepare data
     qid_list = list(query.keys())
@@ -141,44 +165,37 @@ def inference():
         qid = qid_list[q_idx]
         query_text = query[qid]
         query_text = re.sub(r'\r|\n|\t|\s\s+', ' ', query_text)
-        query_class = Query(query_text)
-        ids = []
+        query_class = Query(query_text.strip())
         texts = []
         for docid in res[qid]:
             title = trials[nctid2idx[docid]]['title'] if 'title' in trials[nctid2idx[docid]] else 'NA'
             cond = trials[nctid2idx[docid]]['condition'] if 'condition' in trials[nctid2idx[docid]] else 'NA'
             flag = True
-            for etype in ['eligibility', 'desc']:  # need add exlcusion
+            for etype in ['eligibility', 'desc']:
                 if etype in trials[nctid2idx[docid]] and trials[nctid2idx[docid]][etype]:
                     for idxp, p in enumerate(trials[nctid2idx[docid]][etype]):
                         if p:
-                            textT5 = to_t5_input((query_text, title, cond, p, 'e'))
+                            textT5 = to_t5_input((title, cond, p, etype[0]))
                             textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
-                            ids.append(docid + f'_{etype[0]}_' + str(idxp))
                             texts.append(Text(textT5, {'docid': docid + f'_{etype[0]}_' + str(idxp)}, 0))
                             flag = False
             if flag:  # no eligibility or description
-                textT5 = to_t5_input((query_text, title, cond, 'NA', 'e'))
+                textT5 = to_t5_input((title, cond, 'NA', 'e'))
                 textT5 = re.sub(r'\r|\n|\t|\s\s+', ' ', str(textT5))
-                ids.append(docid + f'_{etype[0]}_-1')
-                texts.append(Text(textT5, {'docid': docid + f'_{etype[0]}_' + str(idxp)}, 0))
-
+                texts.append(Text(textT5, {'docid': docid + f'_e_-1'}, 0))
         reranked = reranker.rerank(query_class, texts)
-        scores = []
-        for r in range(len(reranked)):
-            score = float(reranked[r].score)
-            scores.append(score)
-        scores = sorted(zip(scores, ids), key=lambda k: k[0], reverse=True)
-        write_all_scores(qid, scores, outdir, outname, 'individual')
+        write_all_scores(qid, reranked, outdir, outname, 'individual')
 
         picked = set()
         out_scores = []
-        for score, doc_type in scores:
+        for r in range(len(reranked)):
+            doc_type = reranked[r].metadata["docid"]
+            docid_sub, ftype, dixp = doc_type.split('_')
+            score = float(reranked[r].score)
             if len(out_scores) >= 1000:
                 break
-            if doc_type == 'd':
+            if ftype == 'd':
                 continue
-            docid_sub, ftype, dixp = doc_type.split('_')
             if docid_sub not in picked:
                 picked.add(docid_sub)
                 out_scores.append((docid_sub, score))

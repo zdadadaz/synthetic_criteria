@@ -12,5 +12,5 @@
 #srun python src/gen_mimicIII.py
 #srun python src/preprocess/prepare_data.py
 #srun python src/preprocess/prepare_biomsmarco.py
-#srun python src/preprocess/create_pos_neg.py
-srun python denseRetrieve/preprocess/tokenize_collection.py
+srun python src/preprocess/create_pos_neg.py
+#srun python denseRetrieve/preprocess/tokenize_collection.py

@@ -21,7 +21,7 @@ class MonoT5Dataset(Dataset):
     # query, neg_title, neg_condition, neg_criteria, dtype, label
     def __getitem__(self, idx):
         sample = self.data[idx]
-        query = f'Query: {sample[0]}'
+        # query = f'Query: {sample[0]}'
         if sample[4] == 'i' or sample[4] == 'e':
             # doc = f'Document: title: {sample[1]} condition: {sample[2]} eligibility: {sample[3]} Relevant:'
             text = f'Query: {sample[0]} Document: title: {sample[1]} condition: {sample[2]} eligibility: {sample[3]} Relevant:'
@@ -63,6 +63,7 @@ def main():
                         help="Learning rate parameter.")
     parser.add_argument("--epochs", default=10, type=int, required=False,
                         help="Number of epochs to train")
+    parser.add_argument("--gradient_checkpointing", default='False', choices=('True', 'False'), help="train large model")
 
     device = torch.device('cuda')
     torch.manual_seed(123)
@@ -93,12 +94,12 @@ def main():
         texts = [example['text'] for example in batch]
         tokenized = tokenizer(texts, padding=True, truncation='longest_first', return_tensors='pt', max_length=512)
         tokenized['labels'] = tokenizer([example['labels'] for example in batch], return_tensors='pt')['input_ids']
-        for idx, input_ids in enumerate(tokenized['input_ids']):
-            if len(input_ids) == 512 and input_ids[-1] == 1 and input_ids[-4] != 31484:
-                tokenized['input_ids'][-4] = 31484
-                tokenized['input_ids'][-3] = 17
-                tokenized['input_ids'][-2] = 10
-                tokenized['input_ids'][-1] = 1
+        # for idx, input_ids in enumerate(tokenized['input_ids']):
+        #     if len(input_ids) == 512 and input_ids[-1] == 1 and input_ids[-4] != 31484:
+        #         tokenized['input_ids'][-4] = 31484
+        #         tokenized['input_ids'][-3] = 17
+        #         tokenized['input_ids'][-2] = 10
+        #         tokenized['input_ids'][-1] = 1
 
         for name in tokenized:
             tokenized[name] = tokenized[name].to(device)
@@ -114,11 +115,20 @@ def main():
         steps = 1
         strategy = 'epoch'
 
+    model.config.use_cache = False if args.gradient_checkpointing == 'True' else True
+    device_map = {0: [0, 1, 2],
+                  1: [3, 4, 5, 6, 7, 8, 9],
+                  2: [10, 11, 12, 13, 14, 15, 16],
+                  3: [17, 18, 19, 20, 21, 22, 23]}
+    model.parallelize(device_map)
+    # model.parallelize()
     train_args = Seq2SeqTrainingArguments(
+        gradient_checkpointing=True if args.gradient_checkpointing == 'True' else False,
         output_dir=args.output_model_path,
         do_train=True,
-        save_strategy='no',
-        max_steps=500,
+        save_strategy='steps',
+        save_steps=100,
+        max_steps=1000,
         logging_steps=args.logging_steps,
         per_device_train_batch_size=args.per_device_train_batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,

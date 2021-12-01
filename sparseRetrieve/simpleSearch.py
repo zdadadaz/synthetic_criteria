@@ -35,13 +35,6 @@ def main():
 
     qrels = rf.read_qrel(qrels)
 
-    # cnt = 0
-    # for qid in qrels:
-    #     for doc in qrels[qid]:
-    #         if int(qrels[qid][doc])>0:
-    #             cnt += 1
-    # print(cnt)
-
     pt.init(home_dir='/scratch/itee/s4575321/cache/')
     indexref = '../../data/TRECCT2021/pyterrier_json_cond'
     index = pt.IndexFactory.of(indexref)

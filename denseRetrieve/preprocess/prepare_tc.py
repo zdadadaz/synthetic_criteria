@@ -188,17 +188,17 @@ if __name__ == '__main__':
     random.seed(123)
     rankfile = './denseRetrieve/data/pyserini_tc_bm25.res'
     path_to_file = '../../data/test_collection/qrels-clinical_trials.tsv'
-    path_to_pickle = './data/splits/clean_data_cfg_splits_42'
+    path_to_pickle = './data/splits/clean_data_cfg_splits_63'
     path_to_query = '../../data/test_collection/topics-2014_2015-description.topics'
     query = rf.read_ts_topic(path_to_query)
     outname = 'tc_training.json'
     print(outname)
     run_monot5_on_judge(rankfile, path_to_file, path_to_pickle, query, outname)
 
-    # path_to_file = '../../data/TRECCT2021/trec-ct2021-qrels.txt'
-    # path_to_pickle = './data/splits/clean_data_cfg_splits_63_ct21'
-    # path_to_query = '../../data/TRECCT2021/topics2021.xml'
-    # outname = 'tripple_ct21.tsv'
-    # query = rf.read_topics_ct21(path_to_query)
-    # print(outname)
-    # run_monot5_on_judge(path_to_file, path_to_pickle, query, outname)
+    path_to_file = '../../data/TRECCT2021/trec-ct2021-qrels.txt'
+    path_to_pickle = './data/splits/clean_data_cfg_splits_63_ct21'
+    path_to_query = '../../data/TRECCT2021/topics2021.xml'
+    outname = 'tripple_ct21.tsv'
+    query = rf.read_topics_ct21(path_to_query)
+    print(outname)
+    run_monot5_on_judge(path_to_file, path_to_pickle, query, outname)

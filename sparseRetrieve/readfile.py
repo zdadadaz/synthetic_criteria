@@ -33,3 +33,17 @@ def read_qrel(path_to_qrel) -> dict:
         qrel[qid][docid] = int(rel)
 
     return qrel
+
+def read_resFile(path_to_result) -> list:
+    assert path_to_result.strip().split(".")[-1] == 'res'
+
+    res = {}
+    with open(path_to_result, 'r') as f:
+        contents = f.readlines()
+
+    for line in contents:
+        qid, _, docid, rank, score, name = line.strip().split("\t")
+        if qid not in res:
+            res[qid] = []
+        res[qid].append(docid)
+    return res

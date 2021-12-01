@@ -10,8 +10,9 @@ def eval_set_args(qrel, res):
             ['../trec_eval-9.0.7/trec_eval', '-m', 'P.5', qrel, res],
             ['../trec_eval-9.0.7/trec_eval', '-m', 'P.10', qrel, res],
             ['../trec_eval-9.0.7/trec_eval', '-m', 'P.15', qrel, res],
+            ['../trec_eval-9.0.7/trec_eval', '-m', 'ndcg_cut.10', qrel, res],
             ['../trec_eval-9.0.7/trec_eval', '-m', 'ndcg', qrel, res],
-            ['../trec_eval-9.0.7/trec_eval', '-m', 'recall', qrel, res]]
+            ['../trec_eval-9.0.7/trec_eval', '-m', 'recall.1000', qrel, res]]
     shell = platform.system() == "Windows"
     out = ''
     for cmd in cmds:
