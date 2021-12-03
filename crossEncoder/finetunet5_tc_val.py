@@ -17,20 +17,12 @@ class MonoT5Dataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-    # 0      1          2              3             4      5
-    # query, neg_title, neg_condition, neg_criteria, dtype, label
     def __getitem__(self, idx):
         sample = self.data[idx]
-        if sample[4] == 'i' or sample[4] == 'e':
-            text = f'Query: {sample[0]} Document: title: {sample[1]} condition: {sample[2]} eligibility: {sample[3]} Relevant:'
-        elif sample[4] == 'd':
-            text = f'Query: {sample[0]} Document: title: {sample[1]} condition: {sample[2]} description: {sample[3]} Relevant:'
-        else:  # id or ed
-            text = f'Query: {sample[0]} Document: title: {sample[1]} condition: {sample[2]} eligibility: {sample[3]} description: {sample[6]} Relevant:'
-
+        text = f'Query: {sample[0]} Document: {sample[1]} Relevant:'
         return {
             'text': text,
-            'labels': sample[5],
+            'labels': sample[2],
         }
 
 def main():
@@ -70,31 +62,15 @@ def main():
             for num, line in enumerate(fIn):
                 if num > 6.4e5 * args.epochs:
                     break
-                if len(line.split("\t")) == 8:
-                    query, pos_title, pos_condition, pos_criteria, neg_title, neg_condition, neg_criteria, dtype = line.split(
-                        "\t")
-                    dtype = dtype.replace('\n', '')
-                    train_samples.append((query, pos_title, pos_condition, pos_criteria, dtype, 'true'))
-                    train_samples.append((query, neg_title, neg_condition, neg_criteria, dtype, 'false'))
-                else:
-                    query, pos_title, pos_condition, pos_criteria, pos_descriton, neg_title, neg_condition, neg_criteria, neg_descriton, dtype = line.split(
-                        "\t")
-                    dtype = dtype.replace('\n', '')
-                    train_samples.append((query, pos_title, pos_condition, pos_criteria, dtype, 'true', pos_descriton))
-                    train_samples.append((query, neg_title, neg_condition, neg_criteria, dtype, 'false', neg_descriton))
+                query, pos_doc, neg_doc = line.split("\t")
+                train_samples.append((query, pos_doc, 'true'))
+                train_samples.append((query, neg_doc, 'false'))
         return train_samples
 
     def smart_batching_collate_text_only(batch):
         texts = [example['text'] for example in batch]
         tokenized = tokenizer(texts, padding=True, truncation='longest_first', return_tensors='pt', max_length=512)
         tokenized['labels'] = tokenizer([example['labels'] for example in batch], return_tensors='pt')['input_ids']
-        for idx, input_ids in enumerate(tokenized['input_ids']):
-            if len(input_ids) == 512 and input_ids[-1] == 1 and input_ids[-4] != 31484:
-                tokenized['input_ids'][-4] = 31484
-                tokenized['input_ids'][-3] = 17
-                tokenized['input_ids'][-2] = 10
-                tokenized['input_ids'][-1] = 1
-
         for name in tokenized:
             tokenized[name] = tokenized[name].to(device)
 
@@ -128,7 +104,7 @@ def main():
         save_strategy='epoch',
         # save_steps=100,
         # max_steps=1000,
-        num_train_epochs=5,
+        num_train_epochs=20,
         logging_steps=args.logging_steps,
         per_device_train_batch_size=args.per_device_train_batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,

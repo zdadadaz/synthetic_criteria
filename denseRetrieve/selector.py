@@ -93,7 +93,6 @@ def read_pt2index(args):
 def rerank():
     path_to_res = 'crossEncoder/data/ielab-r2.res'
     args = argfunc()
-    field_type = 'ed'
     outdir_selector = f'denseRetrieve/data/ct21/selector/{args.outname}'
 
     retriever = read_pt2index(args)

@@ -15,20 +15,6 @@ from tqdm import tqdm
 import torch
 
 
-def get_all_judged(path_to_file, threshold):
-    # path_to_file = '../../data/test_collection/qrels-clinical_trials.tsv'
-    qrels = rf.read_qrel(path_to_file)
-    out = {}
-    for qid in qrels:
-        out[qid] = {'pos': [], 'neg': []}
-        for doc in qrels[qid]:
-            if int(qrels[qid][doc]) > threshold:
-                out[qid]['pos'].append(doc)
-            else:
-                out[qid]['neg'].append(doc)
-    return out
-
-
 def choose_document(qrels, trials, nctid2idx):
     # return (qrels['pos'][:1], qrels['neg'][:1])
     if len(qrels['pos']) > len(qrels['neg']):
@@ -69,7 +55,7 @@ def write_all_scores(passages, outname):
 
 
 def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
-    qrels = get_all_judged(path_to_file, 0)
+    qrels = rf.get_all_judged(path_to_file, 0)
     trials = pickle.load(open(path_to_pickle, 'rb'))
     nctid2idx = {i['number']: idx for idx, i in enumerate(trials)}
 

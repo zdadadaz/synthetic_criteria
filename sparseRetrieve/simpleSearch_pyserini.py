@@ -1,8 +1,6 @@
 import re
 import json
 import os
-# from sparseRetrieve.eval import eval_set_args
-# import sparseRetrieve.readfile as rf
 from pyserini.search import SimpleSearcher
 from eval import eval_set_args
 import readfile as rf
@@ -70,11 +68,11 @@ def main():
     output_path = 'sparseRetrieve/runs'
     intermittent_path = 'sparseRetrieve/runs/intermittent'
     out_eval_path = 'sparseRetrieve/evals'
-    qrelsPath = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
+    qrelsPath = '../../data/TRECCT2021/trec-ct2021-qrels.txt'
     method_name = 'doc2query_bm25rm_fusion'
     path_out = os.path.join(output_path, method_name + '.res')
 
-    # qrels = rf.read_qrel(qrelsPath)
+    qrels = rf.read_qrel(qrelsPath)
     searcher = SimpleSearcher('../pyserini/indexes/TRECCT2021')
     searcher.set_rm3()
 
@@ -106,8 +104,8 @@ def main():
 
     RRF_fusion(intermittent_path, qids, path_out, method_name)
     eval(qrelsPath, path_out, method_name, out_eval_path)
-    # eval(qrelsPath, intermittent_path + '/pyserini_bm25rm_0.res', 'bm25rm', out_eval_path)
-
+    eval(qrelsPath, intermittent_path + '/pyserini_bm25rm_0.res', 'bm25rm', out_eval_path)
+    # eval('../../data/TRECCT2021/trec-ct2021-qrels.txt', 'crossEncoder/data/ielab-r2.res', 'ielab-r2', out_eval_path)
 
 
 if __name__ == '__main__':

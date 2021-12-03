@@ -59,6 +59,7 @@ def write_all_scores(qid, scores, output_path, outname, dtype):
             f.write("{}\t{}\t{}\n".format(qid, score, docid_dtype))
         f.flush()
 
+
 def create_res_from_log(path_to_file, outdir, outname, outdir_eval):
     picked = set()
     out_scores = []
@@ -84,6 +85,8 @@ def argfunc():
     parser.add_argument("--batchsize", type=int, default=64)
     parser.add_argument("--model_parallel", type=int, default=0)
     parser.add_argument("--path_to_pickle", type=str, required=True)
+    parser.add_argument("--path_to_query", type=str, required=True)
+    parser.add_argument("--path_to_run", type=str, required=True)
 
     return parser.parse_args()
 
@@ -98,6 +101,7 @@ def get_model(model_path, batch_size):
     reranker = MonoT5(model=model, tokenizer=tokenizer)
     return reranker
 
+
 def get_all_result(path_to_dir):
     out = None
     for path, subdirs, files in os.walk(path_to_dir):
@@ -111,11 +115,9 @@ def get_all_result(path_to_dir):
                         out[qid] = set(out[qid]).union(set(res[qid]))
     return out
 
+
 def inference():
     path_to_file = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
-    path_to_query = '../../data/TRECCT2021/topics2021.xml'
-    path_to_run = './crossEncoder/data/ielab-r2.res'
-    # path_to_run = 'sparseRetrieve/runs/intermittent/'
     outdir = './crossEncoder/runs'
     outdir_eval = './crossEncoder/eval'
 
@@ -129,10 +131,12 @@ def inference():
 
     batch_size = int(arg.batchsize)
     print(model_path, field_type, outname)
-    # outname = 'medt5'
-    # field_type = 'e'  # e, ed
-    # model_path = './crossEncoder/medMST5_ps_model'
-    # batch_size=64
+
+    path_to_query = arg.path_to_query
+    # path_to_query = '../../data/TRECCT2021/topics2021.xml'
+    path_to_run = arg.path_to_run
+    # path_to_run = './crossEncoder/data/ielab-r2.res'
+    # path_to_run = 'sparseRetrieve/runs/intermittent/'
 
     resfile = os.path.join(outdir, outname) + '.res'
     if os.path.exists(resfile):
@@ -146,7 +150,11 @@ def inference():
         os.mkdir(outdir_eval)
 
     # # initialize
-    query = rf.read_topics_ct21(path_to_query)
+    if '2021' in path_to_query:
+        query = rf.read_topics_ct21(path_to_query)
+    else:
+        query = rf.read_ts_topic(path_to_query)
+
     if path_to_run[-3:] == 'res':
         res = rf.read_resFile(path_to_run)
     else:
@@ -167,6 +175,9 @@ def inference():
         query_text = re.sub(r'\r|\n|\t|\s\s+', ' ', query_text)
         query_class = Query(query_text.strip())
         texts = []
+        # can remove after run ct judgment
+        if qid not in res:
+            continue
         for docid in res[qid]:
             title = trials[nctid2idx[docid]]['title'] if 'title' in trials[nctid2idx[docid]] else 'NA'
             cond = trials[nctid2idx[docid]]['condition'] if 'condition' in trials[nctid2idx[docid]] else 'NA'

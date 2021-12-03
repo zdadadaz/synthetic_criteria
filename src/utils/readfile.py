@@ -63,3 +63,31 @@ def read_resFile(path_to_result) -> list:
             res[qid] = []
         res[qid].append(docid)
     return res
+
+def get_all_judged(path_to_file, threshold):
+    # path_to_file = '../../data/test_collection/qrels-clinical_trials.tsv'
+    qrels = read_qrel(path_to_file)
+    out = {}
+    for qid in qrels:
+        out[qid] = {'pos': [], 'neg': []}
+        for doc in qrels[qid]:
+            if int(qrels[qid][doc]) > threshold:
+                out[qid]['pos'].append(doc)
+            else:
+                out[qid]['neg'].append(doc)
+    return out
+
+def read_log(path_to_file):
+    out_scores = {}
+    for l in open(path_to_file, 'r'):
+        qid, score, docid_type = l.split('\t')
+        docid_sub, dtype, pidx = docid_type.split('_')
+        if qid not in out_scores:
+            out_scores[qid] = {}
+        if docid_sub not in out_scores[qid]:
+            out_scores[qid][docid_sub] = {'e':None, 'd':None}
+        if not out_scores[qid][docid_sub][dtype]:
+            out_scores[qid][docid_sub][dtype] = (int(pidx), float(score))
+        elif out_scores[qid][docid_sub][dtype][1] < float(score):
+            out_scores[qid][docid_sub][dtype] = (int(pidx), float(score))
+    return out_scores
