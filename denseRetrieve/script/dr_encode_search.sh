@@ -10,7 +10,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --gres=gpu:1
 
-model_list="biot5"
+model_list="ance"
 for model_name in $model_list
 do
 #model_name="biot5"
@@ -50,14 +50,6 @@ srun python -m tevatron.driver.encode \
   --encode_in_path $token_dir/corpus/split${i}.json \
   --encoded_save_path $encodingPath/split${i}.pt
 done
-
-# search
-#srun python -m tevatron.faiss_retriever \
-#  --query_reps $encodingPath/qry.pt \
-#  --passage_reps $encodingPath/collection.pt \
-#  --depth 2000 \
-#  --save_ranking_to $outRankFile
-
 
 for i in $(seq -f "%02g" 0 9)
 do

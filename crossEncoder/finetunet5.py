@@ -7,8 +7,11 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
+    get_constant_schedule,
+    AdamW
 )
 from transformers import T5Config
+
 
 class MonoT5Dataset(Dataset):
     def __init__(self, data):
@@ -46,7 +49,11 @@ def main():
                         help="Learning rate parameter.")
     parser.add_argument("--epochs", default=10, type=int, required=False,
                         help="Number of epochs to train")
-    parser.add_argument("--gradient_checkpointing", default='True', choices=('True','False'), help="train large model")
+    parser.add_argument("--gradient_checkpointing", default='False', choices=('True', 'False'),
+                        help="train large model")
+    parser.add_argument("--model_parallel", type=int, default=0, help="model parallel")
+    parser.add_argument("--max_steps", default=0, type=int, required=False,
+                        help="Number of steps to train")
 
     device = torch.device('cuda')
     torch.manual_seed(123)
@@ -66,31 +73,8 @@ def main():
 
     def smart_batching_collate_text_only(batch):
         texts = [example['text'] for example in batch]
-        # texts = []
-        # for example in batch:
-        #     new_token = None
-        #     token = tokenizer.tokenize(example['text'])
-        #     if len(token) > 512:
-        #         for idx, t in enumerate(token):
-        #             if t == '▁Document' and token[idx + 1] == ':':
-        #                 if idx > (len(token) - idx):
-        #                     len_reduce = len(token) - 511
-        #                     new_token = token[:(idx - len_reduce)] + token[idx:]
-        #                     break
-        #         if new_token:
-        #             texts.append(''.join(new_token).replace('▁', ' '))
-        #         else:
-        #             texts.append(example['text'])
-        #     else:
-        #         texts.append(example['text'])
         tokenized = tokenizer(texts, padding=True, truncation='longest_first', return_tensors='pt', max_length=512)
         tokenized['labels'] = tokenizer([example['labels'] for example in batch], return_tensors='pt')['input_ids']
-        # for idx, input_ids in enumerate(tokenized['input_ids']):
-        #     if len(input_ids) == 512 and input_ids[-1] == 1 and input_ids[-4] != 31484:
-        #         tokenized['input_ids'][idx][-4] = 31484
-        #         tokenized['input_ids'][idx][-3] = 17
-        #         tokenized['input_ids'][idx][-2] = 10
-        #         tokenized['input_ids'][idx][-1] = 1
         for name in tokenized:
             tokenized[name] = tokenized[name].to(device)
 
@@ -105,33 +89,37 @@ def main():
         steps = 1
         strategy = 'epoch'
 
+    if args.model_parallel:
+        model.parallelize()
+    model.config.use_cache = False if args.gradient_checkpointing == 'True' else True
     train_args = Seq2SeqTrainingArguments(
-        gradient_checkpointing=True if parser.gradient_checkpointing == 'True' else False,
+        gradient_checkpointing=True if args.gradient_checkpointing == 'True' else False,
         output_dir=args.output_model_path,
         do_train=True,
-        save_strategy='no',
+        num_train_epochs=1,
         logging_steps=args.logging_steps,
         per_device_train_batch_size=args.per_device_train_batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         learning_rate=args.learning_rate,
-        weight_decay=5e-5,
-        max_steps=10000,
-        # num_train_epochs=1,
-        warmup_steps=1000,
-        adafactor=True,
+        warmup_ratio=0,
+        weight_decay=0,
+        adafactor=False,
         seed=1,
         disable_tqdm=False,
         load_best_model_at_end=False,
         predict_with_generate=True,
-        dataloader_pin_memory=False,
+        dataloader_pin_memory=False
     )
 
+    optimizer = AdamW(model.parameters(), lr=args.learning_rate)
+    scheduler = get_constant_schedule(optimizer)
     trainer = Seq2SeqTrainer(
         model=model,
         args=train_args,
         train_dataset=dataset_train,
         tokenizer=tokenizer,
         data_collator=smart_batching_collate_text_only,
+        optimizers=(optimizer, scheduler)
     )
 
     trainer.train()

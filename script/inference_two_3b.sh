@@ -8,7 +8,7 @@
 #SBATCH -e log/erro_infer_3b.txt
 #SBATCH --partition=gpu
 #SBATCH --cpus-per-task=5
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:tesla-smx2:2
 
 
 ## FT psu temp + medt5
@@ -19,11 +19,11 @@
 #srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/psuRet_medT5_model \
 #                                        --outname psuRet_medt5 \
 
-outname='ct2016_test'
-base_model='castorini/monot5-3b-med-msmarco'
-path_to_pickle='./data/splits/clean_data_cfg_splits_63'
-path_to_query='../../data/test_collection/topics-2014_2015-description.topics'
-path_to_run='data/judgment/ct2016_judgement.res'
+outname='ct_medt5_ance'
+base_model='crossEncoder/models/3b/tc_med_model_63_3b_ance/'
+path_to_pickle='./data/splits/clean_data_cfg_splits_63_ct21'
+path_to_query='../../data/TRECCT2021/topics2021.xml'
+path_to_run='crossEncoder/data/ielab-r2.res'
 ## FT tc + medt5 e
 srun python ./crossEncoder/inference_e.py --base_model $base_model \
                                         --outname $outname \

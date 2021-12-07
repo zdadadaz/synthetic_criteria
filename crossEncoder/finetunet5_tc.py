@@ -7,6 +7,8 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
+    get_constant_schedule,
+    AdamW
 )
 
 
@@ -64,6 +66,7 @@ def main():
     parser.add_argument("--epochs", default=10, type=int, required=False,
                         help="Number of epochs to train")
     parser.add_argument("--gradient_checkpointing", default='False', choices=('True', 'False'), help="train large model")
+    parser.add_argument("--model_parallel", type=int, default=0, help="model parallel")
 
     device = torch.device('cuda')
     torch.manual_seed(123)
@@ -115,42 +118,39 @@ def main():
         steps = 1
         strategy = 'epoch'
 
+    if args.model_parallel:
+        model.parallelize()
     model.config.use_cache = False if args.gradient_checkpointing == 'True' else True
-    device_map = {0: [0, 1, 2],
-                  1: [3, 4, 5, 6, 7, 8, 9],
-                  2: [10, 11, 12, 13, 14, 15, 16],
-                  3: [17, 18, 19, 20, 21, 22, 23]}
-    model.parallelize(device_map)
-    # model.parallelize()
     train_args = Seq2SeqTrainingArguments(
         gradient_checkpointing=True if args.gradient_checkpointing == 'True' else False,
         output_dir=args.output_model_path,
         do_train=True,
-        save_strategy='steps',
-        save_steps=100,
+        save_steps=200,
         max_steps=1000,
         logging_steps=args.logging_steps,
         per_device_train_batch_size=args.per_device_train_batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         learning_rate=args.learning_rate,
-        weight_decay=5e-5,
-        warmup_steps=100,  # origin: 1k
-        adafactor=True,
+        warmup_ratio=0,
+        weight_decay=0,
+        adafactor=False,
         seed=1,
         disable_tqdm=False,
         load_best_model_at_end=False,
         predict_with_generate=True,
-        dataloader_pin_memory=False,
+        dataloader_pin_memory=False
     )
 
+    optimizer = AdamW(model.parameters(), lr=args.learning_rate)
+    scheduler = get_constant_schedule(optimizer)
     trainer = Seq2SeqTrainer(
         model=model,
         args=train_args,
         train_dataset=dataset_train,
         tokenizer=tokenizer,
         data_collator=smart_batching_collate_text_only,
+        optimizers=(optimizer, scheduler)
     )
-
     trainer.train()
 
     trainer.save_model(args.output_model_path)

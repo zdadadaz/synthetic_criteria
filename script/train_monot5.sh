@@ -11,56 +11,69 @@
 #SBATCH --gres=gpu:tesla-smx2:1
 
 # FT medt5
-#srun python ./crossEncoder/finetunet5.py --triples_path ../../data/bio-MSmarco_ps/tripple.tsv \
+#srun python ./crossEncoder/finetunet5_val.py --triples_path ../../data/bio-MSmarco_ps/tripple.tsv \
+#                                              --triples_path_eval ../../data/bio-MSmarco_ps/tripple_val.tsv  \
 #                                              --learning_rate 1e-3 \
-#                                              --output_model_path ./crossEncoder/models/t5base/medMST5_ps_model
+#                                              --output_model_path ./crossEncoder/models/t5base/medt5_ps_model \
 
-#### FT tc
-#srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
-#                                              --learning_rate 1e-3 \
-#                                              --output_model_path ./crossEncoder/models/t5base/tc_model
-
-
-### FT tc + medt5
-srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc_63.tsv \
-                                              --learning_rate 1e-3 \
-                                              --output_model_path ./crossEncoder/models/t5base/tc_medMST5_model \
-                                              --base_model ./crossEncoder/models/t5base/medMST5_ps_model
-
-
-############### train T5 large
-### FT bio
-#srun python ./crossEncoder/finetunet5.py --triples_path ../../data/bio-MSmarco_ps/tripple.tsv \
-#                                              --learning_rate 1e-3 \
-#                                              --output_model_path ./crossEncoder/models/lg/medMST5_model \
-#                                              --base_model castorini/monot5-large-msmarco-10k
+#sh script/inference_two.sh
 #
-### FT tc + medt5
-#srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
-#                                              --learning_rate 1e-3 \
-#                                              --output_model_path ./crossEncoder/models/lg/tc_medMST5_model \
-#                                              --base_model ./crossEncoder/models/lg/medMST5_model
+#srun python src/preprocess/create_pos_neg_trecct.py
 #
-##### FT tc
-#srun python ./crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv \
-#                                              --learning_rate 1e-3 \
-#                                              --output_model_path ./crossEncoder/models/lg/tc_model \
-#                                              --base_model castorini/monot5-large-msmarco-10k
+#### FT tc + medt5
+srun python ./crossEncoder/finetunet5_tc_val.py --triples_path data/tripple/tripple_tc_63_3b_ance.tsv  \
+                                                --triples_path_eval data/tripple/tripple_ct21_63_3b_ance_small.tsv  \
+                                                --learning_rate 1e-4 \
+                                                --output_model_path ./crossEncoder/models/t5base/tc_medt5_model/ \
+                                                --base_model ./crossEncoder/models/t5base/medt5_ps_model/checkpoint-800
 
-## inference
+#### FT psutemp train one epoch
+#srun python ./crossEncoder/finetunet5.py --triples_path ./data/tripple/tripple_tc_63_base_ance.tsv \
+#                                              --learning_rate 1e-3 \
+#                                              --output_model_path ./crossEncoder/models/t5base/psutemp_medt5_ps_model \
+#                                              --base_model ./crossEncoder/models/t5base/medt5_ps_model/checkpoint-800
+##
+###### FT tc + psutemp
+#srun python ./crossEncoder/finetunet5_tc_val.py --triples_path data/tripple/tripple_tc_63_base_ance.tsv  \
+#                                                --triples_path_eval data/tripple/tripple_ct21_63_base_ance.tsv  \
+#                                                --learning_rate 1e-3 \
+#                                                --output_model_path ./crossEncoder/models/t5base/tc_psutemp_medt5_model \
+#                                                --base_model ./crossEncoder/models/t5base/psutemp_medt5_ps_model
+
+# inference
+path_to_pickle='./data/splits/clean_data_cfg_splits_63_ct21'
+path_to_query='../../data/TRECCT2021/topics2021.xml'
+path_to_run='crossEncoder/data/ielab-r2.res'
 ## FT medt5
-#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/lg/medMST5_model \
-#                                        --outname medt5_lg
+#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/medt5_ps_model/checkpoint-800 \
+#                                        --outname base_medt5 \
+#                                        --batchsize 128 \
+#                                        --path_to_pickle $path_to_pickle \
+#                                        --path_to_query $path_to_query \
+#                                        --path_to_run $path_to_run
 
-## FT tc + medt5
-#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_medMST5_model \
-#                                        --outname tc_medt5 \
-#                                        --batchsize 128
+### FT tc + medt5
+srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_medt5_model \
+                                        --outname base_tc_medt5 \
+                                        --batchsize 128 \
+                                        --path_to_pickle $path_to_pickle \
+                                        --path_to_query $path_to_query \
+                                        --path_to_run $path_to_run
 
-## FT tc
-#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/lg/tc_model \
-#                                        --outname tc_lg \
-#                                        --batchsize 128
-
+#### FT psutemp + medt5
+#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/psutemp_medt5_ps_model \
+#                                        --outname base_psutemp_medt5 \
+#                                        --batchsize 128 \
+#                                        --path_to_pickle $path_to_pickle \
+#                                        --path_to_query $path_to_query \
+#                                        --path_to_run $path_to_run
+#
+#### FT psutemp + medt5
+#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_psutemp_medt5_model \
+#                                        --outname base_tc_psutemp_medt5 \
+#                                        --batchsize 128 \
+#                                        --path_to_pickle $path_to_pickle \
+#                                        --path_to_query $path_to_query \
+#                                        --path_to_run $path_to_run
 
 #srun python crossEncoder/finetunet5_tc.py --triples_path ./data/tripple/tripple_tc.tsv  --save_every_n_steps 10000 --output_model_path test_monoT5_model

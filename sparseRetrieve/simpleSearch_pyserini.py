@@ -28,7 +28,7 @@ def RRF_fusion(res_dir, qids, path_out, method_name):
 def eval(qrelsFile, res_path, out_method_name, out_path):
     eval = eval_set_args(qrelsFile, res_path)
 
-    cmd = '../trec_eval-9.0.7/trec_eval -q {} {} > {}'.format(qrelsFile, res_path,
+    cmd = '../trec_eval-9.0.7/trec_eval -c -q -l 2 {} {} > {}'.format(qrelsFile, res_path,
                                                               os.path.join(out_path, out_method_name) + '.qeval')
     os.system(cmd)
 

@@ -71,6 +71,8 @@ def create_json_psuCriteria_tevatron():
                         if not train_instance[ttype]:
                             flag = False
                     if flag:
+                        if len(train_instance['negatives']) < 8:
+                            train_instance['negatives'] = train_instance['negatives'] * int(8/len(train_instance['negatives']) + 1)
                         fout[idx].write(f'{json.dumps(train_instance)}\n')
 
     fout[0].close()
@@ -81,9 +83,9 @@ def create_json_psuCriteria_tevatron():
 
 def create_json_biomsmarco_tevatron():
     path_to_rank = './denseRetrieve/data/bioMSmarco/ranking/ance_rank_trec.res'
-    path_to_qrels = '../../data/bio-MSmarco/qrels.train.tsv'
-    path_to_query = '../../data/bio-MSmarco/queries.train.tsv'
-    path_to_collection = '../../data/bio-MSmarco/collection.tsv'
+    path_to_qrels = '../../data/bio-MSmarco_ps/qrels.train.tsv'
+    path_to_query = '../../data/bio-MSmarco_ps/queries.train.tsv'
+    path_to_collection = '../../data/bio-MSmarco_ps/collection.tsv'
     out_path = './denseRetrieve/data/bio_training.json'
 
     ranklist = rf.read_resFile(path_to_rank)
@@ -109,10 +111,13 @@ def create_json_biomsmarco_tevatron():
                 'positives': pos_list,
                 'negatives': doc_list
             }
+            if len(train_instance['negatives']) < 8:
+                train_instance['negatives'] = train_instance['negatives'] * int(
+                    8 / len(train_instance['negatives']) + 1)
             outfile.write(f'{json.dumps(train_instance)}\n')
             outfile.flush()
 
 
 if __name__ == '__main__':
-    create_json_psuCriteria_tevatron()
-    # create_json_biomsmarco_tevatron()
+    # create_json_psuCriteria_tevatron()
+    create_json_biomsmarco_tevatron()

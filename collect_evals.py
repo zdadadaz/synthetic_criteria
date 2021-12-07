@@ -9,7 +9,7 @@ from sparseRetrieve.eval import eval_set_args
 def eval(qrelsFile, res_path, out_method_name, out_path):
     eval = eval_set_args(qrelsFile, res_path)
 
-    cmd = '../trec_eval-9.0.7/trec_eval -q {} {} > {}'.format(qrelsFile, res_path,
+    cmd = '../trec_eval-9.0.7/trec_eval -c -q -l 2 {} {} > {}'.format(qrelsFile, res_path,
                                                               os.path.join(out_path, out_method_name) + '.qeval')
     os.system(cmd)
 
@@ -36,7 +36,7 @@ def combine_evals():
 
 def run_eval_for_all_res():
     root = './crossEncoder/runs'
-    path_to_qrel = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
+    path_to_qrel = '../../data/TRECCT2021/trec-ct2021-qrels.txt'
     outdir_eval = './crossEncoder/eval'
     for path, subdirs, files in os.walk(root):
         for name in files:
@@ -70,10 +70,11 @@ def gen_judgement_doc():
     with open(out_path, 'w') as f:
         f.writelines(out)
 
+
 if __name__ == '__main__':
-    # run_eval_for_all_res()
+    run_eval_for_all_res()
     # combine_evals()
-    gen_judgement_doc()
+    # gen_judgement_doc()
 
     # parser = argparse.ArgumentParser()
     # parser.add_argument("--test",default='True', choices=('True','False'))

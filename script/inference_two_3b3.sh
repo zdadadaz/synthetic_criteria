@@ -8,7 +8,7 @@
 #SBATCH -e log/erro_infer_3b3.txt
 #SBATCH --partition=gpu
 #SBATCH --cpus-per-task=5
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:tesla-smx2:2
 
 
 ## FT psu temp + medt5

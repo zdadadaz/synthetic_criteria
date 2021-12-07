@@ -56,6 +56,28 @@ def eval(qrelsFile, res_path, out_method_name, out_path):
     with open(os.path.join(out_path, f'{out_method_name}.eval'), 'w') as f:
         f.writelines(out_txt)
 
+def gen_res_bio():
+    modelname = 'ance_org'
+    path_to_file = f'denseRetrieve/data/bioMSmarco/ranking/ance_rank.txt'
+    out_path = f'denseRetrieve/data/bioMSmarco/ranking/ance_rank_trec.res'
+    out = []
+    cnt = 1
+    cur_qid = None
+    exist = set()
+    for i in open(path_to_file, 'r'):
+        qid, docid, score = i.split('\t')
+        score = score.replace('\n', '')
+        if cur_qid != qid:
+            exist = set()
+            cur_qid = qid
+            cnt = 1
+        if docid not in exist:
+            exist.add(docid)
+            out.append(f"{qid}\tQ0\t{docid}\t{cnt}\t{score}\t{modelname}\n")
+            cnt += 1
+    with open(out_path, 'w') as f:
+        f.writelines(out)
+
 def gen_res():
     modelname = 'biot5'
     path_to_qrels = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
@@ -84,4 +106,5 @@ def gen_res():
     eval(path_to_qrels, out_path, modelname, outdir_eval)
 
 # if __name__ == '__main__':
-#     gen_res()
+#     # gen_res()
+#     gen_res_bio()

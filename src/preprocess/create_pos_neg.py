@@ -162,7 +162,7 @@ def run_monot5_on_judge(path_to_file, path_to_pickle, query, outname):
 if __name__ == '__main__':
     random.seed(123)
     path_to_file = '../../data/test_collection/qrels-clinical_trials.tsv'
-    path_to_pickle = './data/splits/clean_data_cfg_splits_63_ie'
+    path_to_pickle = './data/splits/clean_data_cfg_splits_63'
     path_to_query = '../../data/test_collection/topics-2014_2015-description.topics'
     query = rf.read_ts_topic(path_to_query)
     outname = 'tripple_tc_63_3b_ie.tsv'
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     run_monot5_on_judge(path_to_file, path_to_pickle, query, outname)
 
     path_to_file = '../../data/TRECCT2021/trec_2021_binarized_qrels.txt'
-    path_to_pickle = './data/splits/clean_data_cfg_splits_63_ct21_ie'
+    path_to_pickle = './data/splits/clean_data_cfg_splits_63_ct21'
     path_to_query = '../../data/TRECCT2021/topics2021.xml'
     outname = 'tripple_ct21_63_3b_ie.tsv'
     query = rf.read_topics_ct21(path_to_query)

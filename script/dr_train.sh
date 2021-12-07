@@ -13,6 +13,30 @@
 # preprocess
 srun python denseRetrieve/preprocess/prepare_tc.py
 
+## FT bio
+srun python -m torch.distributed.launch \
+    --nproc_per_node=2 \
+    --master_port 29015 \
+    -m tevatron.driver.train \
+    --output_dir ./denseRetrieve/models/ance/biot5 \
+    --model_name_or_path castorini/ance-msmarco-passage \
+    --do_train \
+    --save_steps 5000 \
+    --train_dir ./denseRetrieve/data/bio_trainset \
+    --fp16 \
+    --per_device_train_batch_size 20 \
+    --learning_rate 1e-6 \
+    --num_train_epochs 1 \
+    --train_n_passages 8 \
+    --q_max_len 512 \
+    --p_max_len 512 \
+    --negatives_x_device \
+    --cache_dir ./denseRetrieve/cache \
+    --dataloader_num_workers 10 \
+    --add_pooler \
+    --grad_cache \
+    --overwrite_output_dir
+
 ## psu temp
 #srun python -m torch.distributed.launch \
 #    --nproc_per_node=2 \
@@ -25,9 +49,9 @@ srun python denseRetrieve/preprocess/prepare_tc.py
 #    --train_dir ./denseRetrieve/data/psu_temp_trainset \
 #    --fp16 \
 #    --per_device_train_batch_size 20 \
-#    --learning_rate 1e-4 \
+#    --learning_rate 1e-6 \
 #    --num_train_epochs 50 \
-#    --train_n_passages 4 \
+#    --train_n_passages 8 \
 #    --q_max_len 512 \
 #    --p_max_len 512 \
 #    --negatives_x_device \
@@ -37,29 +61,7 @@ srun python denseRetrieve/preprocess/prepare_tc.py
 #    --grad_cache \
 #    --overwrite_output_dir
 
-## FT bio
-#srun python -m torch.distributed.launch \
-#    --nproc_per_node=2 \
-#    --master_port 29015 \
-#    -m tevatron.driver.train \
-#    --output_dir ./denseRetrieve/models/ance/biot5 \
-#    --model_name_or_path castorini/ance-msmarco-passage \
-#    --do_train \
-#    --save_steps 5000 \
-#    --train_dir ./denseRetrieve/data/bio_trainset \
-#    --fp16 \
-#    --per_device_train_batch_size 20 \
-#    --learning_rate 1e-4 \
-#    --num_train_epochs 1 \
-#    --train_n_passages 4 \
-#    --q_max_len 512 \
-#    --p_max_len 512 \
-#    --negatives_x_device \
-#    --cache_dir ./denseRetrieve/cache \
-#    --dataloader_num_workers 10 \
-#    --add_pooler \
-#    --grad_cache \
-#    --overwrite_output_dir
+
 
 ### bio + tc
 #srun python -m torch.distributed.launch \
@@ -74,9 +76,9 @@ srun python denseRetrieve/preprocess/prepare_tc.py
 #    --train_dir ./denseRetrieve/data/tc_trainset \
 #    --fp16 \
 #    --per_device_train_batch_size 20 \
-#    --learning_rate 1e-4 \
+#    --learning_rate 1e-6 \
 #    --num_train_epochs 200 \
-#    --train_n_passages 4 \
+#    --train_n_passages 8 \
 #    --q_max_len 512 \
 #    --p_max_len 512 \
 #    --negatives_x_device \
@@ -99,9 +101,9 @@ srun python denseRetrieve/preprocess/prepare_tc.py
 #    --train_dir ./denseRetrieve/data/tc_trainset \
 #    --fp16 \
 #    --per_device_train_batch_size 20 \
-#    --learning_rate 1e-4 \
+#    --learning_rate 1e-6 \
 #    --num_train_epochs 200 \
-#    --train_n_passages 4 \
+#    --train_n_passages 8 \
 #    --q_max_len 512 \
 #    --p_max_len 512 \
 #    --negatives_x_device \
@@ -124,9 +126,9 @@ srun python denseRetrieve/preprocess/prepare_tc.py
 #    --train_dir ./denseRetrieve/data/psu_ret_trainset \
 #    --fp16 \
 #    --per_device_train_batch_size 20 \
-#    --learning_rate 1e-4 \
+#    --learning_rate 1e-6 \
 #    --num_train_epochs 20 \
-#    --train_n_passages 4 \
+#    --train_n_passages 8 \
 #    --q_max_len 512 \
 #    --p_max_len 512 \
 #    --negatives_x_device \
@@ -149,9 +151,9 @@ srun python -m torch.distributed.launch \
     --train_dir ./denseRetrieve/data/tc_trainset \
     --fp16 \
     --per_device_train_batch_size 20 \
-    --learning_rate 1e-4 \
+    --learning_rate 1e-6 \
     --num_train_epochs 200 \
-    --train_n_passages 4 \
+    --train_n_passages 8 \
     --q_max_len 512 \
     --p_max_len 512 \
     --negatives_x_device \

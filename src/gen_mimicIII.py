@@ -9,6 +9,8 @@ from nltk.stem.porter import *
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from tqdm import tqdm
+from transformers import AutoTokenizer
+import numpy as np
 
 class Mimiciii:
     def __init__(self):
@@ -78,7 +80,7 @@ class Mimiciii:
 
             # negative
             tried = set()
-            while len(out_tmp['neg']) < min(len(out_tmp['pos']) * 4, 50) and len(tried) != len(allcode):
+            while len(out_tmp['neg']) < min(len(out_tmp['pos']) * 8, 100) and len(tried) != len(allcode):
                 code_tmp = random.choice(allcode)
                 tried.add(code_tmp)
                 if code_tmp.startswith('V') or code_tmp.startswith('E'):
@@ -236,7 +238,7 @@ class i2b2_doc_2009(Mimiciii):
 
                 # negative
                 tried = set()
-                while len(out_tmp['neg']) < min(len(out_tmp['pos']) * 4, 50) and len(tried) != len(alldisease):
+                while len(out_tmp['neg']) < min(len(out_tmp['pos']) * 8, 100) and len(tried) != len(alldisease):
                     d = random.choice(alldisease)
                     tried.add(d)
                     flag = True
@@ -389,18 +391,32 @@ class i2b2_doc_2014(i2b2_doc_2008):
 
 
 class CreateTripple():
-    def __init__(self, dtype):
+    def __init__(self, dtype, tokenizer):
         self.path_out = f'output/mimic/tripple_mimic_{dtype}.tsv'
+        self.tokenizer = tokenizer
         self.run_all(dtype)
 
     def run_all(self, dtype):
         df, jfile = self.read_file()
         self.gen_tripple(df, jfile, dtype)
 
+    def tokenize(self, text, pass_p, pass_n):
+        token_q = self.tokenizer.tokenize(text)
+        token_p = self.tokenizer.tokenize(pass_p)
+        token_n = self.tokenizer.tokenize(pass_n)
+        max_len_pass = max(len(token_p), len(token_n))
+        if len(token_q) + max_len_pass > 500:
+            new_token = token_q[:(500-len(token_p))]
+            new_text = ''.join(new_token).replace('▁', ' ')
+            return new_text.strip()
+        else:
+            return text.strip()
+
     def gen_tripple(self, df, jfile, dtype):
+        print(self.path_out)
         ddtype = ['pos', 'neg'] if dtype != 'ret' else ['ret_pos', 'ret_neg']
         with open(self.path_out, 'w') as f:
-            for i in range(len(df)):
+            for i in tqdm(range(len(df))):
                 qid = str(df.iloc[i, 0])
                 if qid not in jfile:
                     continue
@@ -413,11 +429,12 @@ class CreateTripple():
                         continue
                     pos_text = re.sub(r'\r|\n|\t|\s\s+', ' ', jfile[qid][ddtype[0]][j])
                     neg_text = re.sub(r'\r|\n|\t|\s\s+', ' ', jfile[qid][ddtype[1]][j])
+                    text = self.tokenize(text, pos_text, neg_text)
                     f.write("{}\t{}\t{}\n".format(text, pos_text, neg_text))
                 f.flush()
 
     def read_file(self):
-        path_to_json = './output/mimic/dia.json'
+        path_to_json = './output/mimic/mimic_dia.json'
         with open(path_to_json, 'r') as f:
             contents = json.loads(f.read())
         for type in ['train', 'test', 'val']:
@@ -433,9 +450,10 @@ class CreateTripple():
 
 
 class CreateTripple_i2b2(CreateTripple):
-    def __init__(self, dtype, year):
+    def __init__(self, dtype, year, tokenizer):
         self.year = year
         self.path_out = f'output/i2b2/tripple_i2b2_{self.year}_{dtype}.tsv'
+        self.tokenizer = tokenizer
         self.run_all(dtype)
 
     def read_file(self):
@@ -465,32 +483,60 @@ def combine_all_file(dtype):
                 filelist[name.split('.')[0]] = os.path.join(path, name)
                 os.system('cat {} >> {}'.format(os.path.join(path, name), path_output))
 
+def gen_val_db(dtype):
+    # dtype = 'ret'
+    path_to_tripple = f'./data/tripple/tripple_psu_{dtype}.tsv'
+    path_to_tripple_train = f'./data/tripple/tripple_psu_{dtype}_train.tsv'
+    path_to_tripple_valid = f'./data/tripple/tripple_psu_{dtype}_valid.tsv'
+    with open(path_to_tripple, 'r') as f:
+        lines = f.readlines()
+    q2lineid = {}
+    for idx, line in enumerate(lines):
+        q, dp, dn = line.strip().split('\t')
+        if q not in q2lineid:
+            q2lineid[q] = []
+        q2lineid[q].append(line)
+
+    q_list = list(q2lineid.keys())
+    trainq = np.random.choice(q_list, int(len(q_list)*0.9), replace=False)
+    valq = list(set(q_list).difference(set(trainq)))
+    with open(path_to_tripple_train, 'w') as f:
+        for q in trainq:
+            for l in q2lineid[q]:
+                f.write(l)
+    with open(path_to_tripple_valid, 'w') as f:
+        for q in valq:
+            for l in q2lineid[q]:
+                f.write(l)
 
 if __name__ == '__main__':
     pt.init(home_dir='/scratch/itee/s4575321/cache/')
     random.seed(123)
-    print('mimic iii')
-    Mimiciii()
-    print('2009')
-    i2b2_doc_2009('2009')
-    print('2008')
-    i2b2_doc_2008('2008')
-    print('2006')
-    i2b2_doc_2009('2006')
-
-    print('2010')
-    i2b2_doc_2010('2010')
-    print('2011')
-    i2b2_doc_2010('2011')
-    print('2012')
-    i2b2_doc_2010('2012')
-
-    print('2014')
-    i2b2_doc_2014('2014')
+    np.random.seed(123)
+    # print('mimic iii')
+    # Mimiciii()
+    # print('2009')
+    # i2b2_doc_2009('2009')
+    # print('2008')
+    # i2b2_doc_2008('2008')
+    # print('2006')
+    # i2b2_doc_2009('2006')
+    #
+    # print('2010')
+    # i2b2_doc_2010('2010')
+    # print('2011')
+    # i2b2_doc_2010('2011')
+    # print('2012')
+    # i2b2_doc_2010('2012')
+    #
+    # print('2014')
+    # i2b2_doc_2014('2014')
 
     # create tripple
+    # tokenizer = AutoTokenizer.from_pretrained('t5-base')
     # for dtype in ['temp', 'ret']:
-    #     CreateTripple(dtype)
+    #     CreateTripple(dtype, tokenizer)
     #     for i in ['2006', '2008', '2009', '2010', '2011', '2012', '2014']:
-    #         CreateTripple_i2b2(dtype, i)
+    #         CreateTripple_i2b2(dtype, i, tokenizer)
     #     combine_all_file(dtype)
+    #     gen_val_db(dtype)

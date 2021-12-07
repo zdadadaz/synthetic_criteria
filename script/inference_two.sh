@@ -1,39 +1,26 @@
 #!/bin/bash
-#SBATCH -N 1
-#SBATCH --job-name=t5infer2
-#SBATCH -n 1
-#SBATCH --time=40:00:00
-#SBATCH --mem-per-cpu=30G
-#SBATCH -o log/out_infer2.txt
-#SBATCH -e log/erro_infer2.txt
-#SBATCH --partition=gpu
-#SBATCH --cpus-per-task=2
-#SBATCH --gres=gpu:tesla-smx2:1
 
+outname='ct2016_base'
+base_model='crossEncoder/models/t5base/medt5_ps_model/checkpoint-800'
+path_to_pickle='./data/splits/clean_data_cfg_splits_63'
+path_to_query='../../data/test_collection/topics-2014_2015-description.topics'
+path_to_run='data/judgment/ct2016_judgement.res'
+## FT tc + medt5 e
+srun python ./crossEncoder/inference_e.py --base_model $base_model \
+                                        --outname $outname \
+                                        --batchsize 32 \
+                                        --path_to_pickle $path_to_pickle \
+                                        --path_to_query $path_to_query \
+                                        --path_to_run $path_to_run
 
-## FT psu temp + medt5
-#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/psuTemp_medT5_model \
-#                                        --outname psuTemp_medt5
-#
-## FT psu ret + medt5
-#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/psuRet_medT5_model \
-#                                        --outname psuRet_medt5
-
-## FT tc + medt5
-srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_medMST5_model \
-                                        --outname tc_medt5 \
-                                        --batchsize 128
-
-srun python ./crossEncoder/inference.py --base_model ./crossEncoder/models/t5base/tc_medMST5_model \
-                                        --outname tc_medt5 \
-                                        --batchsize 128 \
-                                        --log_path crossEncoder/runs/tc_medt5_e_individual_pscore.log
-
-## FT tc + psuRet
-#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_psuRetT5_model \
-#                                        --outname tc_psuRetT5
-
-# FT tc + psuTemp
-#srun python ./crossEncoder/inference_e.py --base_model ./crossEncoder/models/t5base/tc_psuTempT5_model \
-#                                        --outname tc_psuTempT5
-
+outname='ct2021_base'
+base_model='crossEncoder/models/t5base/medt5_ps_model/checkpoint-800'
+path_to_pickle='./data/splits/clean_data_cfg_splits_63_ct21'
+path_to_query='../../data/TRECCT2021/topics2021.xml'
+path_to_run='data/judgment/ct2021_judgement.res'
+srun python ./crossEncoder/inference_e.py --base_model $base_model \
+                                        --outname $outname \
+                                        --batchsize 32 \
+                                        --path_to_pickle $path_to_pickle \
+                                        --path_to_query $path_to_query \
+                                        --path_to_run $path_to_run
