@@ -139,29 +139,29 @@ srun python -m torch.distributed.launch \
 #    --overwrite_output_dir
 
 # psu ret + tc
-srun python -m torch.distributed.launch \
-    --nproc_per_node=2 \
-    --master_port 29015 \
-    -m tevatron.driver.train \
-    --output_dir ./denseRetrieve/models/ance/tc_psuRet \
-    --model_name_or_path castorini/ance-msmarco-passage \
-    --target_model_path ./denseRetrieve/models/ance/psuRet \
-    --do_train \
-    --save_steps 1000 \
-    --train_dir ./denseRetrieve/data/tc_trainset \
-    --fp16 \
-    --per_device_train_batch_size 20 \
-    --learning_rate 1e-6 \
-    --num_train_epochs 200 \
-    --train_n_passages 8 \
-    --q_max_len 512 \
-    --p_max_len 512 \
-    --negatives_x_device \
-    --cache_dir ./denseRetrieve/cache \
-    --dataloader_num_workers 10 \
-    --add_pooler \
-    --grad_cache \
-    --overwrite_output_dir
+#srun python -m torch.distributed.launch \
+#    --nproc_per_node=2 \
+#    --master_port 29015 \
+#    -m tevatron.driver.train \
+#    --output_dir ./denseRetrieve/models/ance/tc_psuRet \
+#    --model_name_or_path castorini/ance-msmarco-passage \
+#    --target_model_path ./denseRetrieve/models/ance/psuRet \
+#    --do_train \
+#    --save_steps 1000 \
+#    --train_dir ./denseRetrieve/data/tc_trainset \
+#    --fp16 \
+#    --per_device_train_batch_size 20 \
+#    --learning_rate 1e-6 \
+#    --num_train_epochs 200 \
+#    --train_n_passages 8 \
+#    --q_max_len 512 \
+#    --p_max_len 512 \
+#    --negatives_x_device \
+#    --cache_dir ./denseRetrieve/cache \
+#    --dataloader_num_workers 10 \
+#    --add_pooler \
+#    --grad_cache \
+#    --overwrite_output_dir
 
 
 

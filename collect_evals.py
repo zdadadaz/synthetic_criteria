@@ -70,12 +70,19 @@ def gen_judgement_doc():
     with open(out_path, 'w') as f:
         f.writelines(out)
 
+import tensorflow as tf
+def test():
+    _sentencepiece_model_file = 'gs://t5-data/vocabs/cc_all.32000/sentencepiece.model'
+    with tf.io.gfile.GFile(_sentencepiece_model_file, "rb") as f:
+        _sp_model = f.read()
+    print(_sp_model)
 
 if __name__ == '__main__':
-    run_eval_for_all_res()
+    # run_eval_for_all_res()
     # combine_evals()
     # gen_judgement_doc()
 
+    test()
     # parser = argparse.ArgumentParser()
     # parser.add_argument("--test",default='True', choices=('True','False'))
     # args = parser.parse_args()

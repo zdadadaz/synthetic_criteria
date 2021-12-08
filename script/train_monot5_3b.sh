@@ -12,8 +12,8 @@
 
 
 srun python ./crossEncoder/finetunet5_tc_val.py --triples_path data/tripple/tripple_tc_63_3b_ance.tsv  \
-                                          --triples_path_eval data/tripple/tripple_ct21_63_3b_ance.tsv  \
-                                         --learning_rate 1e-3 \
+                                          --triples_path_eval data/tripple/tripple_ct21_63_3b_ance_small.tsv  \
+                                         --learning_rate 1e-4 \
                                          --output_model_path ./crossEncoder/models/3b/tc_med_model_63_3b_ance \
                                          --per_device_train_batch_size 16 \
                                          --gradient_accumulation_steps 8 \
